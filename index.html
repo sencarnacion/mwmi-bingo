@@ -214,6 +214,18 @@
   .vote-count { font-weight: 700; }
   .vote-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
+  .delete-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink-soft);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .delete-btn:hover { color: var(--accent); border-color: var(--accent); }
+
   .empty-state { color: var(--ink-soft); }
 
   .admin-box {
@@ -395,7 +407,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot,
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot,
     collection, query, orderBy, getDocs, runTransaction, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -584,6 +596,7 @@
       latestSubmissions.forEach(function (sub) {
         var voters = sub.voters || [];
         var hasVoted = name ? voters.indexOf(name) !== -1 : false;
+        var isOwn = name && sub.submittedBy === name;
         var li = document.createElement('li');
         li.className = 'submission-item';
         li.innerHTML =
@@ -591,8 +604,20 @@
           '<span class="submission-author">' + escapeHtml(sub.submittedBy) + '</span></div>' +
           '<button class="vote-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + sub.id + '">' +
           '<span class="vote-count mono">' + (sub.votes || 0) + '</span><span class="vote-label">' + (hasVoted ? 'voted' : 'vote') + '</span>' +
-          '</button>';
+          '</button>' +
+          (isOwn ? '<button class="delete-btn" data-id="' + sub.id + '" title="Delete">×</button>' : '');
         list.appendChild(li);
+      });
+      list.querySelectorAll('.delete-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (latestConfig && latestConfig.status === 'finalized') {
+            showStatus('submitStatus', 'Voting is closed.', true);
+            return;
+          }
+          if (!confirm('Delete this square?')) return;
+          deleteDoc(doc(db, 'submissions', btn.dataset.id))
+            .catch(function (err) { showStatus('submitStatus', err.message, true); });
+        });
       });
       list.querySelectorAll('.vote-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
