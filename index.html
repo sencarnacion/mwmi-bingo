@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MWMI Bingo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6EFE2;
+    --bg-raised: #FFFCF6;
+    --ink: #2A2118;
+    --ink-soft: #6B5D4E;
+    --line: rgba(42, 33, 24, 0.12);
+    --accent: #DD5233;
+    --accent-ink: #FFFFFF;
+    --teal: #146A63;
+    --gold: #D99A2B;
+    --marked: #E7EFC7;
+    --marked-ink: #3E5B1F;
+    --shadow: rgba(42, 33, 24, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12201E;
+      --bg-raised: #1A2C29;
+      --ink: #F1EAE0;
+      --ink-soft: #B9AC9B;
+      --line: rgba(241, 234, 224, 0.14);
+      --accent: #F0714F;
+      --accent-ink: #14100C;
+      --teal: #6FC7BE;
+      --gold: #E9B54C;
+      --marked: #2C3E1C;
+      --marked-ink: #D9E8AE;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12201E;
+    --bg-raised: #1A2C29;
+    --ink: #F1EAE0;
+    --ink-soft: #B9AC9B;
+    --line: rgba(241, 234, 224, 0.14);
+    --accent: #F0714F;
+    --accent-ink: #14100C;
+    --teal: #6FC7BE;
+    --gold: #E9B54C;
+    --marked: #2C3E1C;
+    --marked-ink: #D9E8AE;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #F6EFE2;
+    --bg-raised: #FFFCF6;
+    --ink: #2A2118;
+    --ink-soft: #6B5D4E;
+    --line: rgba(42, 33, 24, 0.12);
+    --accent: #DD5233;
+    --accent-ink: #FFFFFF;
+    --teal: #146A63;
+    --gold: #D99A2B;
+    --marked: #E7EFC7;
+    --marked-ink: #3E5B1F;
+    --shadow: rgba(42, 33, 24, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  [hidden] { display: none !important; }
+
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  main, header, .identity-bar, .tabs {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .hero { padding-top: 36px; padding-bottom: 20px; }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .identity-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    padding-bottom: 16px;
+  }
+  .identity-label { color: var(--ink-soft); font-size: 0.85rem; }
+  .identity-select, .identity-input, input[type="text"], input[type="password"] {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    color: var(--ink);
+  }
+  .identity-select:focus, .identity-input:focus, input:focus, button:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+  }
+  .identity-saved {
+    font-size: 0.85rem;
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid var(--line);
+    padding-top: 4px;
+  }
+  .tab-btn {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 10px 4px 12px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    margin-right: 18px;
+  }
+  .tab-btn.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { padding-top: 22px; padding-bottom: 40px; min-height: 50vh; }
+  .panel { display: none; }
+  .panel.is-active { display: block; }
+
+  .composer { display: flex; gap: 8px; margin-bottom: 6px; }
+  .composer input { flex: 1; }
+
+  .status-line {
+    min-height: 1.2em;
+    font-size: 0.85rem;
+    color: var(--teal);
+    margin: 6px 0 0;
+  }
+  .status-line.is-error { color: var(--accent); }
+
+  .section-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: 26px 0 10px;
+  }
+
+  .btn {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-accent { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .submission-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .submission-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+  .submission-text { flex: 1; }
+  .submission-author { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-top: 2px; }
+  .vote-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .vote-btn.voted { background: var(--gold); border-color: var(--gold); color: #14100C; }
+  .vote-count { font-weight: 700; }
+  .vote-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .empty-state { color: var(--ink-soft); }
+
+  .admin-box {
+    margin-top: 34px;
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+    color: var(--ink-soft);
+  }
+  .admin-box summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+  .admin-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  .locked-card, .claim-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px;
+    margin-top: 12px;
+  }
+  .locked-title { font-family: 'Fraunces', serif; font-size: 1.2rem; margin: 0 0 6px; }
+  .claim-card { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .claim-card p.section-label { width: 100%; margin-top: 0; }
+
+  .board-head { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .lines-tag {
+    background: var(--teal);
+    color: #fff;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6px;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    cursor: pointer;
+    color: var(--ink);
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cell.free { font-family: 'Fraunces', serif; font-weight: 600; color: var(--teal); cursor: default; }
+  .cell.marked { background: var(--marked); color: var(--marked-ink); border-color: var(--marked-ink); }
+  .cell:active { transform: scale(0.96); }
+
+  .bingo-banner {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--accent);
+    text-align: center;
+    margin: 18px 0 0;
+  }
+
+  .progress-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .progress-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  .progress-name { flex: 1; }
+  .progress-bar-track {
+    width: 60px;
+    height: 6px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar-fill { height: 100%; background: var(--gold); }
+
+  .setup-notice {
+    background: var(--bg-raised);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 16px 20px;
+    font-size: 0.85rem;
+    max-width: 600px;
+  }
+
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <h1 id="tripName">MWMI Bingo</h1>
+  </header>
+
+  <p id="setupNotice" class="setup-notice" hidden>
+    Not connected to a database yet. Open this file and replace the
+    <code>firebaseConfig</code> placeholder near the top of the script with your
+    Firebase project's config object.
+  </p>
+
+  <div class="identity-bar" id="identityBar">
+    <span class="identity-label">Playing as</span>
+    <select id="rosterSelect" class="identity-select" hidden></select>
+    <input id="nameInput" class="identity-input" type="text" placeholder="Name" autocomplete="off">
+    <button id="nameSaveBtn" class="btn btn-ghost">Save</button>
+    <span id="nameSavedTag" class="identity-saved" hidden></span>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn is-active" data-tab="submit" role="tab">Submit &amp; Vote</button>
+    <button class="tab-btn" data-tab="bingo" role="tab">Bingo Board</button>
+  </nav>
+
+  <main>
+    <!-- SUBMIT & VOTE -->
+    <section id="panel-submit" class="panel is-active">
+      <form id="submitForm" class="composer">
+        <input id="squareText" type="text" maxlength="120" placeholder="Enter a square" autocomplete="off">
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+      <p id="submitStatus" class="status-line"></p>
+
+      <p class="section-label">Submissions <span id="squareCount" class="mono"></span></p>
+      <ul id="submissionList" class="submission-list"></ul>
+      <p id="emptyState" class="empty-state" hidden>No squares submitted yet.</p>
+
+      <details class="admin-box">
+        <summary>Organizer tools</summary>
+        <div class="admin-controls">
+          <input id="adminPasscode" type="password" placeholder="Passcode" autocomplete="off">
+          <button id="finalizeBtn" class="btn btn-accent">Finalize board</button>
+          <button id="reopenBtn" class="btn btn-ghost">Reopen voting</button>
+        </div>
+        <p id="adminStatus" class="status-line"></p>
+      </details>
+    </section>
+
+    <!-- BINGO BOARD -->
+    <section id="panel-bingo" class="panel">
+      <div id="bingoLocked" class="locked-card">
+        <p class="locked-title">Not finalized yet</p>
+        <p>Your board will appear here once the organizer finalizes it.</p>
+      </div>
+
+      <div id="bingoClaim" class="claim-card" hidden>
+        <p class="section-label">Enter your name</p>
+        <select id="claimRosterSelect" class="identity-select" hidden></select>
+        <input id="claimNameInput" type="text" placeholder="Name" autocomplete="off">
+        <button id="claimBtn" class="btn btn-primary">Get board</button>
+        <p id="claimStatus" class="status-line"></p>
+      </div>
+
+      <div id="bingoBoard" class="board-wrap" hidden>
+        <div class="board-head">
+          <p class="section-label">Your board</p>
+          <span id="linesTag" class="lines-tag mono">0 lines</span>
+        </div>
+        <div id="grid" class="grid"></div>
+        <p id="bingoBanner" class="bingo-banner" hidden></p>
+
+        <p class="section-label">Group progress</p>
+        <ul id="groupProgress" class="progress-list"></ul>
+      </div>
+    </section>
+  </main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot,
+    collection, query, orderBy, getDocs, runTransaction, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  // Replace with your Firebase project's config object
+  // (Firebase Console > Project settings > General > Your apps > SDK setup and configuration).
+  var firebaseConfig = {
+    apiKey: "AIzaSyByMpgXQhHdjulcjxvCgtYRDPgXJT-3nGo",
+  authDomain: "mwmi-dr-bingo-73ae9.firebaseapp.com",
+  projectId: "mwmi-dr-bingo-73ae9",
+  storageBucket: "mwmi-dr-bingo-73ae9.firebasestorage.app",
+  messagingSenderId: "67951197907",
+  appId: "1:67951197907:web:efa4eefde957b14e49de26",
+  measurementId: "G-WQ8L8X45BL"
+  };
+
+  var LINES = [
+    [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
+    [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
+    [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
+  ];
+  var FREE_INDEX = 12;
+  var MIN_SQUARES = 24;
+  var NAME_KEY = 'bingoPlayerName';
+
+  function el(id) { return document.getElementById(id); }
+
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PASTE_YOUR') === 0) {
+    el('setupNotice').hidden = false;
+  } else {
+    runApp();
+  }
+
+  function countLines(marked) {
+    var count = 0;
+    LINES.forEach(function (line) { if (line.every(function (i) { return marked[i]; })) count++; });
+    return count;
+  }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function getSavedName() { return localStorage.getItem(NAME_KEY) || ''; }
+  function saveName(name) { localStorage.setItem(NAME_KEY, name); }
+  function showStatus(id, msg, isError) {
+    var n = el(id);
+    n.textContent = msg;
+    n.classList.toggle('is-error', !!isError);
+    if (msg) setTimeout(function () { if (n.textContent === msg) n.textContent = ''; }, 4000);
+  }
+  function markNameSaved(name) {
+    el('nameSavedTag').hidden = false;
+    el('nameSavedTag').textContent = name;
+  }
+  function populateRoster(selectEl, roster, currentName) {
+    if (!roster.length) { selectEl.hidden = true; return; }
+    selectEl.hidden = false;
+    selectEl.innerHTML = '<option value="">Choose a name…</option>';
+    roster.forEach(function (r) {
+      var opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      if (r === currentName) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+    var other = document.createElement('option');
+    other.value = '__other__'; other.textContent = 'Other…';
+    selectEl.appendChild(other);
+  }
+
+  function runApp() {
+    var app = initializeApp(firebaseConfig);
+    var db = getFirestore(app);
+
+    var configRef = doc(db, 'config', 'state');
+    var submissionsCol = collection(db, 'submissions');
+    var playersCol = collection(db, 'players');
+
+    var latestConfig = null;
+    var latestSubmissions = [];
+    var latestPlayerName = getSavedName();
+    var lastLines = 0;
+
+    ensureConfigDoc();
+
+    function ensureConfigDoc() {
+      getDoc(configRef).then(function (snap) {
+        if (!snap.exists()) {
+          setDoc(configRef, {
+            tripName: 'MWMI Bingo',
+            status: 'voting',
+            adminPasscode: 'changeme',
+            roster: '',
+            finalizedSquares: []
+          });
+        }
+      });
+    }
+
+    // ---------- Live listeners ----------
+    onSnapshot(configRef, function (snap) {
+      if (!snap.exists()) return;
+      latestConfig = snap.data();
+      el('tripName').textContent = latestConfig.tripName || 'MWMI Bingo';
+      populateRoster(el('rosterSelect'), rosterList(), getSavedName());
+      renderSubmissions();
+      if (el('panel-bingo').classList.contains('is-active')) openBingoTab();
+    });
+
+    onSnapshot(query(submissionsCol, orderBy('votes', 'desc')), function (snap) {
+      latestSubmissions = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      renderSubmissions();
+    });
+
+    onSnapshot(playersCol, function (snap) {
+      var list = snap.docs.map(function (d) {
+        var data = d.data();
+        return { name: d.id, linesCompleted: data.linesCompleted || 0, markedCount: (data.marked || []).filter(Boolean).length };
+      }).sort(function (a, b) { return b.linesCompleted - a.linesCompleted || b.markedCount - a.markedCount; });
+      renderGroupProgress(list);
+    });
+
+    function rosterList() {
+      return String((latestConfig && latestConfig.roster) || '').split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+    }
+
+    // ---------- Identity bar ----------
+    var savedName = getSavedName();
+    el('nameInput').value = savedName;
+    if (savedName) markNameSaved(savedName);
+
+    el('nameSaveBtn').addEventListener('click', function () {
+      var v = el('nameInput').value.trim();
+      if (!v) return;
+      saveName(v);
+      markNameSaved(v);
+      renderSubmissions();
+    });
+    el('rosterSelect').addEventListener('change', function () {
+      if (this.value && this.value !== '__other__') {
+        el('nameInput').value = this.value;
+        saveName(this.value);
+        markNameSaved(this.value);
+        renderSubmissions();
+      }
+    });
+
+    // ---------- Tabs ----------
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        el('panel-' + btn.dataset.tab).classList.add('is-active');
+        if (btn.dataset.tab === 'bingo') openBingoTab();
+      });
+    });
+
+    // ---------- Submit & vote ----------
+    el('submitForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = getSavedName();
+      if (!name) { showStatus('submitStatus', 'Enter your name first.', true); return; }
+      var text = el('squareText').value.trim();
+      if (!text) return;
+      if (latestConfig && latestConfig.status === 'finalized') { showStatus('submitStatus', 'Voting is closed.', true); return; }
+      addDoc(submissionsCol, { text: text, submittedBy: name, votes: 0, voters: [], createdAt: serverTimestamp() })
+        .then(function () { el('squareText').value = ''; })
+        .catch(function (err) { showStatus('submitStatus', err.message, true); });
+    });
+
+    function renderSubmissions() {
+      if (!latestConfig) return;
+      var name = getSavedName();
+      var list = el('submissionList');
+      list.innerHTML = '';
+      el('squareCount').textContent = latestSubmissions.length + ' / ' + MIN_SQUARES + ' needed';
+      el('emptyState').hidden = latestSubmissions.length > 0;
+      latestSubmissions.forEach(function (sub) {
+        var voters = sub.voters || [];
+        var hasVoted = name ? voters.indexOf(name) !== -1 : false;
+        var li = document.createElement('li');
+        li.className = 'submission-item';
+        li.innerHTML =
+          '<div class="submission-text">' + escapeHtml(sub.text) +
+          '<span class="submission-author">' + escapeHtml(sub.submittedBy) + '</span></div>' +
+          '<button class="vote-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + sub.id + '">' +
+          '<span class="vote-count mono">' + (sub.votes || 0) + '</span><span class="vote-label">' + (hasVoted ? 'voted' : 'vote') + '</span>' +
+          '</button>';
+        list.appendChild(li);
+      });
+      list.querySelectorAll('.vote-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var voteName = getSavedName();
+          if (!voteName) { showStatus('submitStatus', 'Enter your name first.', true); return; }
+          if (latestConfig && latestConfig.status === 'finalized') { showStatus('submitStatus', 'Voting is closed.', true); return; }
+          var ref = doc(db, 'submissions', btn.dataset.id);
+          runTransaction(db, function (tx) {
+            return tx.get(ref).then(function (snap) {
+              var data = snap.data();
+              var voters = (data.voters || []).slice();
+              var idx = voters.indexOf(voteName);
+              if (idx === -1) voters.push(voteName); else voters.splice(idx, 1);
+              tx.update(ref, { voters: voters, votes: voters.length });
+            });
+          }).catch(function (err) { showStatus('submitStatus', err.message, true); });
+        });
+      });
+    }
+
+    // ---------- Admin ----------
+    el('finalizeBtn').addEventListener('click', function () {
+      var code = el('adminPasscode').value;
+      if (!latestConfig || !latestConfig.adminPasscode || code !== latestConfig.adminPasscode) {
+        showStatus('adminStatus', 'Wrong passcode.', true); return;
+      }
+      if (latestSubmissions.length < MIN_SQUARES) {
+        showStatus('adminStatus', 'Need at least ' + MIN_SQUARES + ' squares (have ' + latestSubmissions.length + ').', true); return;
+      }
+      var top = latestSubmissions.slice(0, MIN_SQUARES).map(function (s) { return s.text; });
+      updateDoc(configRef, { finalizedSquares: top, status: 'finalized' })
+        .then(function () { showStatus('adminStatus', 'Finalized.', false); })
+        .catch(function (err) { showStatus('adminStatus', err.message, true); });
+    });
+    el('reopenBtn').addEventListener('click', function () {
+      var code = el('adminPasscode').value;
+      if (!latestConfig || !latestConfig.adminPasscode || code !== latestConfig.adminPasscode) {
+        showStatus('adminStatus', 'Wrong passcode.', true); return;
+      }
+      updateDoc(configRef, { status: 'voting' })
+        .then(function () { showStatus('adminStatus', 'Reopened.', false); })
+        .catch(function (err) { showStatus('adminStatus', err.message, true); });
+    });
+
+    // ---------- Bingo board ----------
+    var playerUnsub = null;
+
+    function openBingoTab() {
+      if (!latestConfig) return;
+      if (latestConfig.status !== 'finalized') {
+        el('bingoLocked').hidden = false;
+        el('bingoClaim').hidden = true;
+        el('bingoBoard').hidden = true;
+        return;
+      }
+      el('bingoLocked').hidden = true;
+      var name = getSavedName();
+      if (name) {
+        claimAndWatchBoard(name);
+      } else {
+        el('bingoClaim').hidden = false;
+        el('bingoBoard').hidden = true;
+        populateRoster(el('claimRosterSelect'), rosterList(), '');
+      }
+    }
+
+    el('claimRosterSelect').addEventListener('change', function () {
+      if (this.value === '__other__') { this.hidden = true; el('claimNameInput').hidden = false; el('claimNameInput').focus(); }
+      else if (this.value) { el('claimNameInput').value = this.value; }
+    });
+
+    el('claimBtn').addEventListener('click', function () {
+      var name = (el('claimNameInput').value || el('claimRosterSelect').value).trim();
+      if (!name) { showStatus('claimStatus', 'Enter your name.', true); return; }
+      saveName(name);
+      markNameSaved(name);
+      claimAndWatchBoard(name);
+    });
+
+    function claimAndWatchBoard(name) {
+      var ref = doc(db, 'players', name);
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) { watchBoard(name); return; }
+        var finalized = latestConfig.finalizedSquares || [];
+        var shuffled = shuffle(finalized);
+        var board = [], marked = [], pool = 0;
+        for (var i = 0; i < 25; i++) {
+          if (i === FREE_INDEX) { board.push('FREE'); marked.push(true); }
+          else { board.push(shuffled[pool]); marked.push(false); pool++; }
+        }
+        setDoc(ref, { board: board, marked: marked, linesCompleted: countLines(marked), claimedAt: serverTimestamp() })
+          .then(function () { watchBoard(name); });
+      }).catch(function (err) { showStatus('claimStatus', err.message, true); });
+    }
+
+    function watchBoard(name) {
+      el('bingoClaim').hidden = true;
+      el('bingoBoard').hidden = false;
+      if (playerUnsub) playerUnsub();
+      playerUnsub = onSnapshot(doc(db, 'players', name), function (snap) {
+        if (!snap.exists()) return;
+        var data = snap.data();
+        if (data.linesCompleted > lastLines) flashBingo(data.linesCompleted);
+        lastLines = data.linesCompleted;
+        renderBoard(name, data);
+      });
+    }
+
+    function renderBoard(name, data) {
+      var grid = el('grid');
+      grid.innerHTML = '';
+      data.board.forEach(function (text, i) {
+        var cell = document.createElement('div');
+        cell.className = 'cell' + (i === FREE_INDEX ? ' free' : '') + (data.marked[i] ? ' marked' : '');
+        cell.textContent = i === FREE_INDEX ? 'FREE' : text;
+        if (i !== FREE_INDEX) {
+          cell.addEventListener('click', function () {
+            var ref = doc(db, 'players', name);
+            runTransaction(db, function (tx) {
+              return tx.get(ref).then(function (snap) {
+                var d = snap.data();
+                var marked = d.marked.slice();
+                marked[i] = !marked[i];
+                tx.update(ref, { marked: marked, linesCompleted: countLines(marked) });
+              });
+            });
+          });
+        }
+        grid.appendChild(cell);
+      });
+      el('linesTag').textContent = data.linesCompleted + (data.linesCompleted === 1 ? ' line' : ' lines');
+    }
+
+    function flashBingo(lines) {
+      var b = el('bingoBanner');
+      b.hidden = false;
+      b.textContent = 'BINGO — ' + lines + (lines === 1 ? ' line' : ' lines');
+      setTimeout(function () { b.hidden = true; }, 3500);
+    }
+
+    function renderGroupProgress(list) {
+      var ul = el('groupProgress');
+      ul.innerHTML = '';
+      var maxLines = Math.max(1, list.reduce(function (m, p) { return Math.max(m, p.linesCompleted); }, 0));
+      list.forEach(function (p) {
+        var li = document.createElement('li');
+        li.className = 'progress-item';
+        li.innerHTML =
+          '<span class="progress-name">' + escapeHtml(p.name) + '</span>' +
+          '<span class="progress-bar-track"><span class="progress-bar-fill" style="width:' + (100 * p.linesCompleted / maxLines) + '%"></span></span>' +
+          '<span class="mono">' + p.linesCompleted + 'L</span>';
+        ul.appendChild(li);
+      });
+    }
+  }
+</script>
+</body>
+</html>
