@@ -430,6 +430,7 @@
   ];
   var FREE_INDEX = 12;
   var MIN_SQUARES = 24;
+  var POOL_SIZE = 35;
   var NAME_KEY = 'bingoPlayerName';
 
   function el(id) { return document.getElementById(id); }
@@ -444,6 +445,14 @@
     var count = 0;
     LINES.forEach(function (line) { if (line.every(function (i) { return marked[i]; })) count++; });
     return count;
+  }
+  function spacesAway(marked) {
+    var min = 5;
+    LINES.forEach(function (line) {
+      var unmarked = line.filter(function (i) { return !marked[i]; }).length;
+      if (unmarked < min) min = unmarked;
+    });
+    return min;
   }
   function shuffle(arr) {
     var a = arr.slice();
@@ -532,8 +541,8 @@
     onSnapshot(playersCol, function (snap) {
       var list = snap.docs.map(function (d) {
         var data = d.data();
-        return { name: d.id, linesCompleted: data.linesCompleted || 0, markedCount: (data.marked || []).filter(Boolean).length };
-      }).sort(function (a, b) { return b.linesCompleted - a.linesCompleted || b.markedCount - a.markedCount; });
+        return { name: d.id, linesCompleted: data.linesCompleted || 0, spacesAway: spacesAway(data.marked || []) };
+      }).sort(function (a, b) { return a.spacesAway - b.spacesAway || b.linesCompleted - a.linesCompleted; });
       renderGroupProgress(list);
     });
 
@@ -647,7 +656,7 @@
       if (latestSubmissions.length < MIN_SQUARES) {
         showStatus('adminStatus', 'Need at least ' + MIN_SQUARES + ' squares (have ' + latestSubmissions.length + ').', true); return;
       }
-      var top = latestSubmissions.slice(0, MIN_SQUARES).map(function (s) { return s.text; });
+      var top = latestSubmissions.slice(0, POOL_SIZE).map(function (s) { return s.text; });
       updateDoc(configRef, { finalizedSquares: top, status: 'finalized' })
         .then(function () { showStatus('adminStatus', 'Finalized.', false); })
         .catch(function (err) { showStatus('adminStatus', err.message, true); });
@@ -702,11 +711,11 @@
       getDoc(ref).then(function (snap) {
         if (snap.exists()) { watchBoard(name); return; }
         var finalized = latestConfig.finalizedSquares || [];
-        var shuffled = shuffle(finalized);
-        var board = [], marked = [], pool = 0;
+        var chosen = shuffle(finalized).slice(0, MIN_SQUARES);
+        var board = [], marked = [], slot = 0;
         for (var i = 0; i < 25; i++) {
           if (i === FREE_INDEX) { board.push('FREE'); marked.push(true); }
-          else { board.push(shuffled[pool]); marked.push(false); pool++; }
+          else { board.push(chosen[slot]); marked.push(false); slot++; }
         }
         setDoc(ref, { board: board, marked: marked, linesCompleted: countLines(marked), claimedAt: serverTimestamp() })
           .then(function () { watchBoard(name); });
@@ -761,14 +770,15 @@
     function renderGroupProgress(list) {
       var ul = el('groupProgress');
       ul.innerHTML = '';
-      var maxLines = Math.max(1, list.reduce(function (m, p) { return Math.max(m, p.linesCompleted); }, 0));
       list.forEach(function (p) {
         var li = document.createElement('li');
         li.className = 'progress-item';
+        var label = p.spacesAway === 0 ? 'BINGO' : p.spacesAway + ' away';
+        var fillPct = Math.max(0, Math.min(100, (5 - p.spacesAway) / 5 * 100));
         li.innerHTML =
           '<span class="progress-name">' + escapeHtml(p.name) + '</span>' +
-          '<span class="progress-bar-track"><span class="progress-bar-fill" style="width:' + (100 * p.linesCompleted / maxLines) + '%"></span></span>' +
-          '<span class="mono">' + p.linesCompleted + 'L</span>';
+          '<span class="progress-bar-track"><span class="progress-bar-fill" style="width:' + fillPct + '%"></span></span>' +
+          '<span class="mono">' + label + '</span>';
         ul.appendChild(li);
       });
     }
