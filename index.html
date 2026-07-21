@@ -473,7 +473,7 @@
   function populateRoster(selectEl, roster, currentName) {
     if (!roster.length) { selectEl.hidden = true; return; }
     selectEl.hidden = false;
-    selectEl.innerHTML = '<option value="">Choose a name…</option>';
+    selectEl.innerHTML = '<option value="">Choose a name‚Ä¶</option>';
     roster.forEach(function (r) {
       var opt = document.createElement('option');
       opt.value = r; opt.textContent = r;
@@ -481,7 +481,7 @@
       selectEl.appendChild(opt);
     });
     var other = document.createElement('option');
-    other.value = '__other__'; other.textContent = 'Other…';
+    other.value = '__other__'; other.textContent = 'Other‚Ä¶';
     selectEl.appendChild(other);
   }
 
@@ -605,7 +605,7 @@
           '<button class="vote-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + sub.id + '">' +
           '<span class="vote-count mono">' + (sub.votes || 0) + '</span><span class="vote-label">' + (hasVoted ? 'voted' : 'vote') + '</span>' +
           '</button>' +
-          (isOwn ? '<button class="delete-btn" data-id="' + sub.id + '" title="Delete">×</button>' : '');
+          (isOwn ? '<button class="delete-btn" data-id="' + sub.id + '" title="Delete">√ó</button>' : '');
         list.appendChild(li);
       });
       list.querySelectorAll('.delete-btn').forEach(function (btn) {
@@ -754,7 +754,7 @@
     function flashBingo(lines) {
       var b = el('bingoBanner');
       b.hidden = false;
-      b.textContent = 'BINGO — ' + lines + (lines === 1 ? ' line' : ' lines');
+      b.textContent = 'BINGO ‚Äî ' + lines + (lines === 1 ? ' line' : ' lines');
       setTimeout(function () { b.hidden = true; }, 3500);
     }
 
